@@ -1,0 +1,41 @@
+---
+
+- name: install ldb-tools package (ldbsearch)
+  package: name=ldb-tools state=present
+  become: true
+
+- name: check if the test user exists
+  command: >
+    samba-tool user list -H ldap://{{ master_dc }} -k yes
+  register: user_list_out
+  vars:
+    master_dc: "{{ samba_master_hostname }}.{{ samba_realm }}"
+
+- set_fact:
+    test_user_exists: "{{ test_user.name in user_list_out.stdout_lines }}"
+
+- name: create the test user
+  command: >
+    samba-tool user create "{{ test_user.name }}" "{{ test_user.password }}"
+    -H ldap://{{ master_dc }} -k yes
+  vars:
+    master_dc: "{{ samba_master_hostname }}.{{ samba_realm }}"
+  when: not(test_user_exists|bool)
+
+- name: find the test user SID, part 1
+  shell: >
+    ldbsearch -H ldap://{{ master_dc }} -k yes
+    "(&(sAMAccountType=805306368)(sAMAccountName={{ test_user.name }}))"
+    objectSid |
+    awk '/^objectSid:/ { print $2 }'
+  register: test_user_sid_out
+  vars:
+    master_dc: "{{ samba_master_hostname }}.{{ samba_realm }}"
+
+- set_fact:
+    test_user_sid: "{{ test_user_sid_out.stdout.strip() }}"
+
+- fail:
+    msg: "Domain user {{ test_user.name }} does not exist"
+  when: test_user_sid_out.stdout.strip() == ''
+

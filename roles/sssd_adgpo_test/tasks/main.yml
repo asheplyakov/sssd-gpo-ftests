@@ -1,0 +1,24 @@
+
+- name: install OpenLDAP utilities
+  package: name=openldap-clients state=present
+  become: true
+
+- name: prevent OpenLDAP tools from fiddling with reverse DNS
+  lineinfile:
+    dest: /etc/openldap/ldap.conf
+    line: 'sasl_nocanon yes'
+    state: present
+    create: yes
+  become: true
+
+- name: install SASL GSSAPI plugin
+  package: name=libsasl2-plugin-gssapi state=present
+  become: true
+
+- include: testuser.yml
+
+- include: OUs.yml
+  with_items: "{{ test_ous }}"
+
+- include: gpoobj.yml
+  with_items: "{{ test_gpos }}"

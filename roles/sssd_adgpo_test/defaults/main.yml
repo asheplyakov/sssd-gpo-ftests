@@ -1,0 +1,14 @@
+---
+
+test_user:
+  name: adgpotest
+  password: ADgpoTest123
+
+test_gpos:
+  - display_name: "AD GPO Test - Allow Login"
+    template: SeInteractiveLogonRight.inf.j2
+  - display_name: "AD GPO Test - Deny Login"
+    template: SeDenyInteractiveLogonRight.inf.j2
+
+test_ous:
+  - name: SSSD Test Servers

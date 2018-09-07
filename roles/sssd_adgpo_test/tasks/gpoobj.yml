@@ -1,0 +1,60 @@
+---
+
+- name: create GPO container
+  command: >
+    samba-tool gpo create "{{ item.display_name }}"
+    -H ldap://{{ master_dc }} -k yes
+  register: gpo_create_out
+  failed_when: false
+  vars:
+    master_dc: "{{ samba_master_hostname }}.{{ samba_realm }}"
+
+- name: find out GPO container uuid
+  shell: >
+    ldbsearch -H ldap://{{ master_dc }} -k yes
+    -b "CN=Policies,CN=System,{{ samba_realm|domain2dn }}"
+    '(&(objectClass=groupPolicyContainer)(displayName={{ item.display_name }}))'
+    name | awk '/^name:/ { print $2 }'
+  register: gpo_name_out
+  vars:
+    master_dc: "{{ samba_master_hostname }}.{{ samba_realm }}"
+
+- set_fact:
+    gpo_name: "{{ gpo_name_out.stdout.strip() }}"
+
+- set_fact:
+    gpo_gpttmpl: "/var/lib/samba/sysvol/{{ samba_realm }}/Policies/{{ gpo_name }}/Machine/Microsoft/Windows NT/SecEdit/GptTmpl.inf"
+
+- fail:
+    msg: "failed to create GPO container {{ item.display_name }}"
+  when: gpo_name == ''
+
+- name: create GPO directories in sysvol
+  file:
+    path: "{{ gpo_gpttmpl|dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0700
+  become: true
+
+- set_fact:
+    gpo_tmpfile: "/tmp/{{ gpo_gpttmpl.replace('/', '_') }}"
+
+- name: create GPO payload in sysvol
+  template:
+    src: "{{ item.template }}"
+    dest: "{{ gpo_tmpfile }}"
+    owner: root
+    group: root
+    mode: 0700
+  become: true
+
+- name: convert GPO payload to UTF-16
+  command: >
+    iconv -f UTF-8 -t UTF-16 -o "{{ gpo_gpttmpl }}" "{{ gpo_tmpfile }}"
+  become: true
+
+- name: fix GPO payload ACLs
+  command: samba-tool ntacl sysvolreset
+  become: true

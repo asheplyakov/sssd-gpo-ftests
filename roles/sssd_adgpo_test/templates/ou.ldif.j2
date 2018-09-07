@@ -1,0 +1,8 @@
+dn: OU={{ name }},{{ samba_realm|domain2dn }}
+objectClass: top
+objectClass: organizationalUnit
+instanceType: 4
+ou: {{ name }}
+name: {{ name }}
+objectCategory: CN=Organizational-Unit,CN=Schema,CN=Configuration,{{ samba_realm|domain2dn }}
+distinguishedName: OU={{ name }},{{ samba_realm|domain2dn }}
