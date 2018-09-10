@@ -19,6 +19,19 @@
   package: name=iconv state=present
   become: true
 
+- include: extra_apt_repo.yml
+  with_items: "{{ extra_apt_repos|default([]) }}"
+
+- name: check if SSSD is installed
+  command: rpm -ql sssd
+  register: sssd_status_out
+  failed_when: false
+
+- name: upgrade SSSD
+  package: name=sssd state=present update_cache=yes
+  when: sssd_status_out.rc == 0
+  become: true
+
 - set_fact:
     samba_master_fqdn: "{{ samba_master_hostname }}.{{ samba_realm }}"
 
