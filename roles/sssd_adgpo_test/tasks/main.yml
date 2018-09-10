@@ -15,6 +15,10 @@
   package: name=libsasl2-plugin-gssapi state=present
   become: true
 
+- name: install iconv tool
+  package: name=iconv state=present
+  become: true
+
 - include: testuser.yml
 
 - include: OUs.yml
