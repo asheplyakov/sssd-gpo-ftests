@@ -29,5 +29,6 @@
 - name: create OU
   command: >
     ldbmodify -H ldap://{{ master_dc }} -k yes "{{ ou_ldif_path }}"
+  when: not(ou_exists|bool)
   vars:
     master_dc: "{{ samba_master_hostname }}.{{ samba_realm }}"
