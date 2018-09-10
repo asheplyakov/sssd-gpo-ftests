@@ -9,6 +9,8 @@ test_gpos:
     template: SeInteractiveLogonRight.inf.j2
   - display_name: "AD GPO Test - Deny Login"
     template: SeDenyInteractiveLogonRight.inf.j2
+  - display_name: "AD GPO Test - Allow/Deny Login"
+    template: SeAllowDenyInteractiveLogonRight.inf.j2
 
 test_ous:
   - name: SSSD Test Servers
