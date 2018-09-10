@@ -19,6 +19,9 @@
   package: name=iconv state=present
   become: true
 
+- set_fact:
+    samba_master_fqdn: "{{ samba_master_hostname }}.{{ samba_realm }}"
+
 - include: testuser.yml
 
 - include: OUs.yml

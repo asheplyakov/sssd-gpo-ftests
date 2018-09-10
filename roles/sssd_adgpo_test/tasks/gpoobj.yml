@@ -29,6 +29,33 @@
     msg: "failed to create GPO container {{ item.display_name }}"
   when: gpo_name == ''
 
+- set_fact:
+    gpo_tmpfile: "/tmp/{{ gpo_gpttmpl.replace('/', '_') }}"
+    gpc_ldif_path: "/tmp/{{ gpo_name|replace(' ', '_') }}_gPCMachineExtensionNames.ldif"
+
+
+- name: check if gPCMachineExtensionNames attribute exists
+  shell: >
+    ldapsearch -Y GSSAPI -N -H ldap://{{ samba_master_fqdn }}
+    -b 'CN={{ gpo_name }},CN=Policies,CN=System,{{ samba_realm|domain2dn }}'
+    -LLL '(objectClass=groupPolicyContainer)' gPCMachineExtensionNames |
+    awk '/^gPCMachineExtensionNames:/ { print $1 }'
+  register: gPCMachineExtensionNames_search_out
+  failed_when: false
+
+- set_fact:
+    gPCMachineExtensionNames_exists: "{{ gPCMachineExtensionNames_search_out.stdout.strip() != '' }}"
+
+- name: set flag to disable user settings, part 1
+  template:
+    src: ./templates/gPCMachineExtensionNames.ldif.j2
+    dest: "{{ gpc_ldif_path }}"
+    mode: 0644
+
+- name: set flag to disable user settings, part 2
+  command: >
+    ldapmodify -N -Y GSSAPI -H ldap://{{ samba_master_fqdn }} -f "{{ gpc_ldif_path }}"
+
 - name: create GPO directories in sysvol
   file:
     path: "{{ gpo_gpttmpl|dirname }}"
@@ -37,9 +64,6 @@
     group: root
     mode: 0700
   become: true
-
-- set_fact:
-    gpo_tmpfile: "/tmp/{{ gpo_gpttmpl.replace('/', '_') }}"
 
 - name: create GPO payload in sysvol
   template:
