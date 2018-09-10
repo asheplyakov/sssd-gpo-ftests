@@ -36,14 +36,18 @@
     samba_master_fqdn: "{{ samba_master_hostname }}.{{ samba_realm }}"
 
 - include: testuser.yml
+  when: samba_flavor == 'master'
 
 - include: OUs.yml
   with_items: "{{ test_ous }}"
+  when: samba_flavor == 'master'
 
 - include: move2ou.yml
+  when: samba_flavor == 'master'
   with_items: "{{ groups['samba_clients'] }}"
   vars:
     dest_OU: "{{ test_ous[0].name }}"
 
 - include: gpoobj.yml
   with_items: "{{ test_gpos }}"
+  when: samba_flavor == 'master'

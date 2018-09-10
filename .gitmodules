@@ -1,0 +1,4 @@
+[submodule "roles/samba"]
+	path = roles/samba
+	url = git://github.com/altlinuxteam/ansible-samba.git
+	branch = master
