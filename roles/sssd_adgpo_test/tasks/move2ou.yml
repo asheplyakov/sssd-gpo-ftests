@@ -1,0 +1,40 @@
+---
+
+
+- set_fact:
+    cn: "{{ hostvars[item].inventory_hostname_short }}"
+    src_dn: "CN={{ hostvars[item].inventory_hostname_short }},CN=Computers,{{ samba_realm|domain2dn }}"
+    dst_dn: "CN={{ hostvars[item].inventory_hostname_short }},OU={{ dest_OU }},{{ samba_realm|domain2dn }}"
+
+
+- name: check if the source DN exists
+  command: >
+    ldapsearch -Y GSSAPI -N -H ldap://{{ samba_master_fqdn }}
+    -b "{{ src_dn }}" "(objectClass=computer)"
+  register: src_dn_exists_out
+  failed_when: false
+
+- name: check if the destination DN exists
+  command: >
+    ldapsearch -Y GSSAPI -N -H ldap://{{ samba_master_fqdn }}
+    -b "{{ dst_dn }}" "(objectClass=computer)"
+  register: dst_dn_exists_out
+  failed_when: false
+
+- set_fact:
+    src_dn_exists: "{{ src_dn_exists_out.rc == 0 }}"
+    dst_dn_exists: "{{ dst_dn_exists_out.rc == 0 }}"
+
+- fail:
+    msg: "{{ cn }} does not exist (neither source nor destination)"
+  when: not(src_dn_exists|bool) and not(dst_dn_exists|bool)
+
+- fail:
+    msg: "{{ cn }} exists both in the Computers and the {{ dest_OU }} OUs"
+  when: src_dn_exists|bool and dst_dn_exists|bool
+
+- name: move computer "{{ cn }}" to "{{ dest_OU }}" OU
+  command: >
+    ldbrename -H ldap://{{ samba_master_fqdn }} -k yes
+    "{{ src_dn }}" "{{ dst_dn }}"
+  when: src_dn_exists|bool and not(dst_dn_exists|bool)

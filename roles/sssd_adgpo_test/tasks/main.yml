@@ -27,5 +27,10 @@
 - include: OUs.yml
   with_items: "{{ test_ous }}"
 
+- include: move2ou.yml
+  with_items: "{{ groups['samba_clients'] }}"
+  vars:
+    dest_OU: "{{ test_ous[0].name }}"
+
 - include: gpoobj.yml
   with_items: "{{ test_gpos }}"
