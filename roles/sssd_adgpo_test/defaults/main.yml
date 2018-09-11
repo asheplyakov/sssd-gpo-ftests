@@ -4,16 +4,21 @@ test_user:
   name: adgpotest
   password: ADgpoTest123
 
+test_ous:
+  - name: Allow Login
+  - name: Deny Login
+  - name: Allow/Deny Login
+
 test_gpos:
   - display_name: "AD GPO Test - Allow Login"
     template: SeInteractiveLogonRight.inf.j2
+    target_ou: Allow Login
   - display_name: "AD GPO Test - Deny Login"
     template: SeDenyInteractiveLogonRight.inf.j2
+    target_ou: Deny Login
   - display_name: "AD GPO Test - Allow/Deny Login"
     template: SeAllowDenyInteractiveLogonRight.inf.j2
-
-test_ous:
-  - name: SSSD Test Servers
+    target_ou: Allow/Deny Login
 
 # extra_apt_repos:
 #  - name: localsssd

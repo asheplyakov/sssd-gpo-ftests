@@ -82,3 +82,26 @@
 - name: fix GPO payload ACLs
   command: samba-tool ntacl sysvolreset
   become: true
+
+- name: check if the GPO is linked to the target OU
+  command: >
+    ldapsearch -Y GSSAPI -N -H ldap://{{ samba_master_fqdn }}
+    -b "OU={{ item.target_ou }},{{ samba_realm|domain2dn }}" -LLL
+    "(&(objectClass=organizationalUnit)(gPLink=[ldap://CN={{ gpo_name }},CN=Policies,CN=System,{{ samba_realm|domain2dn }};*]))"
+    gPLink
+  register: gpo_link_out
+  when: item.target_ou is defined
+  failed_when: false
+
+- set_fact:
+    gpo_link_exists: "{{ gpo_link_out.rc == 0 and gpo_link_out.stdout.strip() != '' }}"
+  when: item.target_ou is defined
+
+- name: link GPO to the target OU
+  command: >
+    samba-tool gpo setlink -H ldap://{{ samba_master_fqdn }} -k yes
+    "OU={{ item.target_ou }},{{ samba_realm|domain2dn }}"
+    "{{ gpo_name }}"
+  when:
+    - item.target_ou is defined
+    - not(gpo_link_exists|default(false)|bool)
