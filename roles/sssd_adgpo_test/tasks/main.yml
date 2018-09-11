@@ -50,9 +50,12 @@
 
 - include: move2ou.yml
   when: samba_flavor == 'master'
-  with_items: "{{ groups['samba_clients'] }}"
   vars:
-    dest_OU: "{{ test_ous[0].name }}"
+    dest_OU: "{{ test_ous[idx|int].name }}"
+    item: "{{ groups['samba_clients'][idx|int] }}"
+  with_items: "{{ range(0, test_ous|length|int)|list }}"
+  loop_control:
+    loop_var: idx
 
 - include: gpoobj.yml
   with_items: "{{ test_gpos }}"
