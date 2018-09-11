@@ -15,7 +15,8 @@
 
 - set_fact:
     ou_exists: "{{ ou_guid != '' }}"
-    ou_ldif_path: "/tmp/ou_{{ samba_realm }}_{{ item.name|replace(' ', '_') }}.ldif"
+    ou_ldif_path: "/tmp/ou_{{ samba_realm }}_{{ item.name|replace(' ', '_')|replace('/', '_') }}.ldif"
+
 
 - name: create OU LDIF
   template:
