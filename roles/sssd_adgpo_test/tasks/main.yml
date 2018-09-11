@@ -35,6 +35,12 @@
 - set_fact:
     samba_master_fqdn: "{{ samba_master_hostname }}.{{ samba_realm }}"
 
+- name: get administrator TGT
+  command: >
+    kinit administrator@{{ samba_realm|upper }}
+  args:
+    stdin: "{{ samba_admin_pass }}"
+
 - include: testuser.yml
   when: samba_flavor == 'master'
 
