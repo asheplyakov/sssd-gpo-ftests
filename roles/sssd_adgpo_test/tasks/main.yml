@@ -81,3 +81,8 @@
 - include: gpoobj.yml
   with_items: "{{ test_gpos }}"
   when: samba_flavor == 'master'
+
+- name: flush SSSD cache
+  command: sss_cache -E
+  become: true
+  when: sssd_status_out.rc == 0
