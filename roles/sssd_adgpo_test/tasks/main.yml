@@ -27,9 +27,30 @@
   register: sssd_status_out
   failed_when: false
 
+- name: enable GPO processing in sssd.conf
+  lineinfile:
+    dest: /etc/sssd/sssd.conf
+    line: 'access_provider = ad'
+    insertafter: '^chpass_provider\\s*[=]\\s*ad\\s*$'
+    state: present
+  notify: restart SSSD
+  when: sssd_status_out.rc == 0
+  become: true
+
+- name: enable SSSD verbose debugging
+  lineinfile:
+    dest: /etc/sssd/sssd.conf
+    regexp: '^debug_level\\s*][=].*$'
+    line: 'debug_level = 50'
+    state: present
+  when: sssd_status_out.rc == 0
+  notify: restart SSSD
+  become: true
+
 - name: upgrade SSSD
   package: name=sssd state=present update_cache=yes
   when: sssd_status_out.rc == 0
+  notify: restart SSSD
   become: true
 
 - set_fact:
