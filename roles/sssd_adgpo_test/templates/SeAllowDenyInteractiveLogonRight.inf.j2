@@ -6,3 +6,5 @@ Revision=0
 [Privilege Rights]
 SeInteractiveLogonRight = *{{ test_user_sid }},*S-1-5-32-544
 SeDenyInteractiveLogonRight = *{{ test_user_sid }}
+SeRemoteInteractiveLogonRight = *{{ test_user_sid }},*S-1-5-32-544
+SeDenyRemoteInteractiveLogonRight = *{{ test_user_sid }}
