@@ -1,0 +1,25 @@
+---
+
+- set_fact:
+    target_fqdn: "{{ item }}.{{ samba_realm|lower }}"
+
+- name: "grab host key from {{ item }}"
+  set_fact:
+    raw_key: "{{ lookup('pipe', 'ssh-keygen -q -F ' + item|quote + ' -f ~/.ssh/known_hosts').strip() }}"
+
+- name: extract the key itself
+  set_fact:
+    ssh_key: "{{ target_fqdn }} {{ raw_key.split(' ')[1:-1]|join(' ') }} root@{{ target_fqdn }}"
+  when: "'@' in raw_key.split(' ')[-1]"
+
+- name: extract the key itself
+  set_fact:
+    ssh_key: "{{ target_fqdn }} {{ raw_key.split(' ')[1:]|join(' ') }} root@{{ target_fqdn }}"
+  when: "'@' not in raw_key.split(' ')[-1]"
+
+- name: add the key to the remote ssh_known_hosts
+  known_hosts:
+    path: "{{ remote_ssh_known_hosts }}"
+    name: "{{ target_fqdn }}"
+    key: "{{ ssh_key }}"
+  become: true

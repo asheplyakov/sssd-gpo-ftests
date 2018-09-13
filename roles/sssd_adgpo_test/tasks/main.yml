@@ -6,6 +6,7 @@
     - openldap-clients
     - libsasl2-plugin-gssapi
     - iconv
+    - sshpass
   become: true
 
 - name: prevent OpenLDAP tools from fiddling with reverse DNS
@@ -16,6 +17,10 @@
     create: yes
   become: true
 
+- include: add_ssh_key_from_local_known_hosts.yml
+  vars:
+    remote_ssh_known_hosts: "/etc/openssh/ssh_known_hosts"
+  with_items: "{{ groups['samba_clients'] }}"
 
 - include: extra_apt_repo.yml
   with_items: "{{ extra_apt_repos|default([]) }}"
@@ -84,3 +89,6 @@
   command: sss_cache -E
   become: true
   when: sssd_status_out.rc == 0
+
+- include: check_domain_user_ssh_access.yml
+  when: samba_flavor == 'client'

@@ -1,0 +1,28 @@
+---
+
+- name: check if test user can login via ssh
+  command: >
+    sshpass -p {{ test_user.password }} ssh {{ test_user.name }}@{{ fqdn }} /bin/true
+  vars:
+    fqdn: "{{ inventory_hostname_short }}.{{ samba_realm|lower }}"
+  delegate_to: "{{ groups['samba_master_dc'][0] }}"
+  register: ssh_status
+  failed_when: false
+
+- set_fact:
+    host_idx: "{{ groups['samba_clients'].index(inventory_hostname_short) }}"
+
+- set_fact:
+    expect_granted_access: "{{ test_ous[host_idx].name != 'Allow Login' }}"
+
+- fail:
+    msg: "{{ test_user.name }} has been unexpectedly granted ssh login to {{ inventory_hostname_short }}"
+  when:
+    - not(expect_granted_access|bool)
+    - ssh_status.rc != 255
+
+- fail:
+    msg: "{{ test_user.name }} has been denied ssh access to {{ inventory_hostname_short }}"
+    when:
+      - expect_granted_access|bool
+      - ssh_status.rc != 0
