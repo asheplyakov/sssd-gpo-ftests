@@ -1,6 +1,11 @@
+---
 
-- name: install OpenLDAP utilities
-  package: name=openldap-clients state=present
+- name: install required packages (ldap, sasl2-gssapi, iconv, etc)
+  package: name={{ item }} state=present
+  with_items:
+    - openldap-clients
+    - libsasl2-plugin-gssapi
+    - iconv
   become: true
 
 - name: prevent OpenLDAP tools from fiddling with reverse DNS
@@ -11,13 +16,6 @@
     create: yes
   become: true
 
-- name: install SASL GSSAPI plugin
-  package: name=libsasl2-plugin-gssapi state=present
-  become: true
-
-- name: install iconv tool
-  package: name=iconv state=present
-  become: true
 
 - include: extra_apt_repo.yml
   with_items: "{{ extra_apt_repos|default([]) }}"
