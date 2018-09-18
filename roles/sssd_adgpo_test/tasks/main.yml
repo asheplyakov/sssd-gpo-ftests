@@ -30,6 +30,9 @@
   register: sssd_status_out
   failed_when: false
 
+- set_fact:
+    sssd_installed: "{{ sssd_status_out.rc == 0 }}"
+
 - name: enable GPO processing in sssd.conf
   lineinfile:
     dest: /etc/sssd/sssd.conf
@@ -37,7 +40,7 @@
     insertafter: '^chpass_provider\\s*[=]\\s*ad\\s*$'
     state: present
   notify: restart SSSD
-  when: sssd_status_out.rc == 0
+  when: sssd_installed|bool
   become: true
 
 - name: enable SSSD verbose debugging
@@ -46,23 +49,29 @@
     regexp: '^debug_level\\s*][=].*$'
     line: 'debug_level = 50'
     state: present
-  when: sssd_status_out.rc == 0
+  when: sssd_installed|bool
   notify: restart SSSD
   become: true
 
 - name: upgrade SSSD
   package: name=sssd state=present update_cache=yes
-  when: sssd_status_out.rc == 0
+  when: sssd_installed|bool
   notify: restart SSSD
   become: true
 
 - name: run handlers (to restart SSSD)
   meta: flush_handlers
+  when: sssd_installed|bool
 
 - name: flush SSSD cache
   command: sss_cache -E
+  register: sss_cache_flush_out
+  when: sssd_installed|bool
+  failed_when: false
+  until: sss_cache_flush_out.rc == 0
+  delay: 10
+  retries: 3
   become: true
-  when: sssd_status_out.rc == 0
 
 - set_fact:
     samba_master_fqdn: "{{ samba_master_hostname }}.{{ samba_realm }}"
