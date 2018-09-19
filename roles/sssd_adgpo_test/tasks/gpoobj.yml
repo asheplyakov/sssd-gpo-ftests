@@ -21,9 +21,10 @@
 
 - set_fact:
     gpo_name: "{{ gpo_name_out.stdout.strip() }}"
+    sysvol: "/var/lib/samba/sysvol/{{ samba_realm }}"
 
 - set_fact:
-    gpo_gpttmpl: "/var/lib/samba/sysvol/{{ samba_realm }}/Policies/{{ gpo_name }}/Machine/Microsoft/Windows NT/SecEdit/GptTmpl.inf"
+    gpo_gpttmpl: "{{ sysvol }}/Policies/{{ gpo_name }}/Machine/Microsoft/Windows NT/SecEdit/GptTmpl.inf"
 
 - fail:
     msg: "failed to create GPO container {{ item.display_name }}"
@@ -62,21 +63,56 @@
     state: directory
     owner: root
     group: root
-    mode: 0700
   become: true
 
-- name: create GPO payload in sysvol
+- name: create GPO payload
   template:
     src: "{{ item.template }}"
-    dest: "{{ gpo_tmpfile }}"
-    owner: root
-    group: root
-    mode: 0700
-  become: true
+    dest: "{{ gpo_tmpfile }}.pre"
+    mode: 0600
 
 - name: convert GPO payload to UTF-16
   command: >
-    iconv -f UTF-8 -t UTF-16 -o "{{ gpo_gpttmpl }}" "{{ gpo_tmpfile }}"
+    iconv -f UTF-8 -t UTF-16 -o "{{ gpo_tmpfile }}" "{{ gpo_tmpfile }}.pre"
+
+- name: put GPO into sysvol
+  copy:
+    src: "{{ gpo_tmpfile }}"
+    dest: "{{ gpo_gpttmpl }}"
+    remote_src: true
+  register: gpo_payload_copy
+  become: true
+
+- name: find the GPO version number
+  shell: >
+    ldapsearch -Y GSSAPI -N -H ldap://{{ samba_master_fqdn }} -LLL
+    -b "cn={{ gpo_name }},cn=Policies,cn=System,{{ samba_realm|domain2dn }}"
+    "(objectClass=groupPolicyContainer)" versionNumber |
+    awk '/^versionNumber:/ { print $2 }'
+  register: gpo_ldap_version_out
+
+- set_fact:
+    gpo_version_ldif: "/tmp/{{ gpo_name }}_version.ldif"
+    gpo_versionNumber: "{{ gpo_ldap_version_out.stdout|int }}"
+
+- name: bump the GPO version number in LDAP, make ldif
+  template:
+    src: templates/versionNumber.ldif.j2
+    dest: "{{ gpo_version_ldif }}"
+    mode: 0600
+  when: gpo_payload_copy is changed
+
+- name: bump the GPO version number in LDAP, apply ldif
+  command: >
+    ldapmodify -Y GSSAPI -N -H ldap://{{ samba_master_fqdn }} -f "{{ gpo_version_ldif }}"
+  when: gpo_payload_copy is changed
+
+- name: bump the GPO version number in GPT.INI
+  lineinfile:
+    path: "{{ sysvol }}/Policies/{{ gpo_name }}/GPT.INI"
+    regexp: "^Version="
+    line: "Version={{ gpo_versionNumber|int + 1 }}"
+  when: gpo_payload_copy is changed
   become: true
 
 - name: fix GPO payload ACLs

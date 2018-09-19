@@ -1,0 +1,5 @@
+dn: cn={{ gpo_name }},cn=Policies,cn=System,{{ samba_realm|domain2dn }}
+changetype: modify
+replace: versionNumber
+versionNumber: {{ gpo_versionNumber|int + 1 }}
+-
