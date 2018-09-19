@@ -13,7 +13,7 @@
     host_idx: "{{ groups['samba_clients'].index(inventory_hostname_short) }}"
 
 - set_fact:
-    expect_granted_access: "{{ test_ous[host_idx].name != 'Allow Login' }}"
+    expect_granted_access: "{{ test_ous[host_idx|int].name == 'Allow Login' }}"
 
 - fail:
     msg: "{{ test_user.name }} has been unexpectedly granted ssh login to {{ inventory_hostname_short }}"
@@ -23,6 +23,6 @@
 
 - fail:
     msg: "{{ test_user.name }} has been denied ssh access to {{ inventory_hostname_short }}"
-    when:
-      - expect_granted_access|bool
-      - ssh_status.rc != 0
+  when:
+    - expect_granted_access|bool
+    - ssh_status.rc != 0
