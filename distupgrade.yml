@@ -1,0 +1,7 @@
+---
+
+- hosts:
+    - localhost
+  tasks:
+    - include: ./tasks/distupgrade.yml
+  become: true
