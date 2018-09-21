@@ -1,0 +1,69 @@
+---
+# dist-upgrade ALT p[89] system to Sisyphus
+
+- name: use sisyphus APT repositories
+  shell: >
+    find /etc/apt/sources.list.d -type f -name '*.list' |
+    xargs -n1 sed -re 's;^([#]*\s*rpm)\s+[[][^]]+[]](.*)$;\1 [alt] \2;'
+    -re 's;[pc][89]/branch/;Sisyphus/;' -i
+  become: true
+
+- name: update APT meta-data
+  command: apt-get update
+  become: true
+
+# XXX: apt exits before trigger have completed. Thus trigger processes
+# will be killed as soon as ssh connection terminates. Use systemd-run
+# to avoid the problem.
+# Note: ignoring the exit code might seem wrong (and it is wrong). However
+# that's the exit code of the last exited process (presumably delayed
+# filetriggers) rather than the exit code of `apt-get` itself. A regular
+# `apt-get install rpm` does the very same thing: it arranges filtetrigger(s)
+# to be run after apt-get has exited, so there's no check filetrigger(s) exit
+# code. Moreover a zero exit code of apt-get does not guarantee the update
+# was OK.
+- name: upgrade APT and RPM
+  command: >
+    systemd-run --service-type=forking --wait apt-get install -y rpm
+  failed_when: false
+  become: true
+
+- name: check for a stale asynchronous filetriggers state
+  stat:
+    path: /var/lib/rpm/delay-posttrans-filetriggers
+    get_checksum: false
+  register: delay_posttrans_filetriggers_stat
+  failed_when: false
+  become: true
+
+- fail:
+    msg: "A stale /var/lib/rpm/delay-posttrans-filetriggers found. The system is badly broken"
+  when: delay_posttrans_filetriggers_stat.stat.exists
+
+- name: run dist-upgrade
+  command: apt-get dist-upgrade -y
+  register: dist_upgrade_status
+  become: true
+
+- name: reboot
+  shell: sleep 2 && systemctl reboot
+  become: true
+  async: 1
+  poll: 0
+  when: dist_upgrade_status is changed
+
+- name: wait for machine to reboot
+  wait_for:
+    port: 22
+    host: "{{ ansible_host }}"
+    state: started
+    delay: 30
+  when: dist_upgrade_status is changed
+  delegate_to: localhost
+
+- name: install debugging tools
+  package: name={{ item }} state=present
+  with_items:
+    - gdb
+    - lsof
+    - strace
