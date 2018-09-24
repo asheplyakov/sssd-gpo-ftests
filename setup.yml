@@ -16,13 +16,13 @@
     - samba
  
 - hosts:
-    - windows_members
-  roles:
-    - windows_domain_member
-
-- hosts:
     - samba_master_dc
     - samba_domain_controllers
     - samba_clients
   roles:
     - sssd_adgpo_test
+
+- hosts:
+    - windows_members
+  roles:
+    - windows_domain_member
