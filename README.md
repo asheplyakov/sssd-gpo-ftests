@@ -1,12 +1,10 @@
-=========================
-SSSD AD group policy test
-=========================
+# SSSD AD group policy test
 
-The goal is to check if AD group policy based access control works as expected. 
+The goal is to check if the access control based on AD group policy
+works as expected.
 
 
-Scenario
-========
+## Scenario
 
 The test creates 3 GPOs which are expected to
 
@@ -22,8 +20,7 @@ The test logs in to every client machine (from the domain controller) and
 checks if the actual result (login granted/denied) matches the expectation.
 
 
-Prerequisites
-=============
+## Prerequisites
 
 * 4 hosts in the same L2 network 
   - every host runs ALT Linux (p8)
@@ -36,32 +33,33 @@ Prerequisites
   - able to connect to the test hosts via ssh
 
 
-Preparations
-============
+## Preparations
 
-* Install ansible and git on the control machine, on ALT Linux run::
+1. Install ansible and git on the control machine. On ALT Linux run
+   ```bash
+   sudo apt-get install -y ansible git
+   ```
 
-    apt-get install -y ansible git
+2. Clone this repository
+   ```bash
+   git clone --recursive git://git.altlinux.org/people/asheplyakov/public/sssd-gpo-ftests.git
+   cd sssd-gpo-ftests
+   ```
 
-* Clone this repository::
+3. Adjust the **hosts.sample** file and rename it to **hosts**
 
-    git clone --recursive git://git.altlinux.org/people/asheplyakov/public/sssd-gpo-ftests.git
-    cd sssd-gpo-ftests
+4. Adjust the **group_vars/all.yml.sample** file and rename it to **group_vars/all.yml**
 
-* Adjust ``hosts.samle`` and rename it to ``hosts``
-* Adjust ``group_vars/all.yml.sample`` and rename it to ``group_vars/all.yml``
-* Check if the test hosts (VMs) are reachable::
+5. Check if the test hosts are reachable via ssh
 
-    ansible -i hosts -m ping all
-
-  If some hosts are not reachable, fix that problem before continuing
-
-
-Running the test
-================
-
-* ::
-
-    ansible-playbook -i hosts setup.yml
+   ```bash
+   ansible -i hosts -m ping all
+   ```
+   If some hosts are not reachable fix connection issues before continuing
 
 
+## Running the test
+
+```bash
+ansible-playbook -i hosts setup.yml
+```
