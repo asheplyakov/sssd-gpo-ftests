@@ -1,0 +1,7 @@
+[samba_master_dc]
+dc0 ansible_host=192.168.122.AA ansible_user=root
+[samba_clients]
+# the test needs at least 3 client hosts
+cl0 ansible_host=192.168.122.XX ansible_user=root
+cl1 ansible_host=192.168.122.YY ansible_user=root
+cl2 ansible_host=192.168.122.ZZ ansible_user=root

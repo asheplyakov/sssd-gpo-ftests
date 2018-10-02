@@ -9,7 +9,12 @@ samba_dns_backend: SAMBA_INTERNAL
 samba_master_address: "{{ hostvars[groups['samba_master_dc'][0]].ansible_host }}"
 samba_master_hostname: "{{ hostvars[groups['samba_master_dc'][0]].inventory_hostname_short }}"
 
+# extra_apt_repos:
+#   - name: localsssd
+#     description: SSSD 1.16.3 (locally built)
+#     entry: "http://{{ samba_dns_forward }}:8000/sssd p8 x86_64"
+
 extra_apt_repos:
-  - name: localsssd
-    description: SSSD 1.16.3 (locally built)
-    entry: "http://{{ samba_dns_forward }}:8000/sssd p8 x86_64"
+  - name: samba_heimdal
+    description: samba 4.8.5 with Heimdal kerberos
+    entry: http://git.altlinux.org/tasks/index/sisyphus/tested/213494/build/repo/ x86_64 task
