@@ -22,9 +22,6 @@
     remote_ssh_known_hosts: "/etc/openssh/ssh_known_hosts"
   with_items: "{{ groups['samba_clients'] }}"
 
-- include: extra_apt_repo.yml
-  with_items: "{{ extra_apt_repos|default([]) }}"
-
 - name: check if SSSD is installed
   command: rpm -ql sssd
   register: sssd_status_out

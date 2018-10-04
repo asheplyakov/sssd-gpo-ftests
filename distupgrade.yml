@@ -2,6 +2,8 @@
 
 - hosts:
     - localhost
-  tasks:
-    - include: ./tasks/distupgrade.yml
+  roles:
+    - altlinux-common
+  vars:
+    use_sisyphus: true
   become: true

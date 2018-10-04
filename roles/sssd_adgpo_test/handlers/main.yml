@@ -4,8 +4,3 @@
   service: name=sssd state=restarted
   become: true
 
-- name: update APT cache
-  command: apt-get update
-  args:
-    warn: false
-  become: true

@@ -4,9 +4,8 @@
     - samba_master_dc
     - samba_domain_controllers
     - samba_clients
-  tasks:
-    - include: ./tasks/distupgrade.yml
-      when: use_sisyphus|default('false')|bool
+  roles:
+    - altlinux-common
 
 - hosts:
     - samba_master_dc

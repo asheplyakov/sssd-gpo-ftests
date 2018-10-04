@@ -1,0 +1,10 @@
+---
+
+# use_sisyphus: false
+#
+# extra_apt_repos:
+#   - name: samba_heimdal
+#     description: samba 4.8.5 with Heimdal kerberos
+#     entry: http://git.altlinux.org/tasks/index/sisyphus/tested/213494/build/repo x86_64 task
+#
+

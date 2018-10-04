@@ -1,0 +1,7 @@
+---
+
+- include: ./distupgrade.yml
+  when: use_sisyphus|default('false')|bool
+
+- include: ./extra_apt_repo.yml
+  with_items: "{{ extra_apt_repos|default([]) }}"
