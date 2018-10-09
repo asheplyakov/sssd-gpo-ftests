@@ -15,11 +15,6 @@
     domain_admin_password: "{{ samba_admin_pass }}"
   register: domain_state
 
-- name: reboot
-  win_reboot:
-     #-
-  when: domain_state.reboot_required|bool
-
 - name: enable remote desktop service
   win_command: >
     reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server"
@@ -28,3 +23,8 @@
 - name: enable rdesktop connections in windows firewall
   win_command: >
     netsh firewall set service RemoteDesktop enable
+
+- name: reboot
+  win_reboot:
+     #-
+  when: domain_state.reboot_required|bool
