@@ -15,17 +15,18 @@
 # XXX: apt exits before trigger have completed. Thus trigger processes
 # will be killed as soon as ssh connection terminates. Use systemd-run
 # to avoid the problem.
-# Note: ignoring the exit code might seem wrong (and it is wrong). However
-# that's the exit code of the last exited process (presumably delayed
-# filetriggers) rather than the exit code of `apt-get` itself. A regular
-# `apt-get install rpm` does the very same thing: it arranges filtetrigger(s)
-# to be run after apt-get has exited, so there's no check filetrigger(s) exit
-# code. Moreover a zero exit code of apt-get does not guarantee the update
-# was OK.
+# Note: `systemd-run --service-type=forking --wait` might exit with
+# code 1 even if apt has completed successfully (i.e. just exit'ed(0)
+# without forking any children), hence a custom `failed_when`.
+# Note: the exit code of delayed filetriggers is ignored (for there's
+# no way to capture it reliably). A regular `apt-get install rpm apt`
+# does the very same thing: it arranges filtetrigger(s) to be run after
+# apt-get has exited, so there's no check for filetrigger(s) exit code.
 - name: upgrade APT and RPM
   command: >
-    systemd-run --service-type=forking --wait apt-get install -y rpm
-  failed_when: false
+    systemd-run --service-type=forking --wait apt-get install -y rpm apt
+  register: apt_upgrade_result
+  failed_when: "'Finished with result: success' not in apt_upgrade_result.stderr_lines"
   become: true
 
 - name: check for a stale asynchronous filetriggers state
@@ -44,6 +45,18 @@
   command: apt-get dist-upgrade -y
   register: dist_upgrade_status
   become: true
+
+- name: check for a stale asynchronous filetriggers state
+  stat:
+    path: /var/lib/rpm/delay-posttrans-filetriggers
+    get_checksum: false
+  register: delay_posttrans_filetriggers_stat
+  failed_when: false
+  become: true
+
+- fail:
+    msg: "A stale /var/lib/rpm/delay-posttrans-filetriggers found. The system is badly broken"
+  when: delay_posttrans_filetriggers_stat.stat.exists
 
 - name: reboot
   shell: sleep 2 && systemctl reboot
