@@ -1,0 +1,52 @@
+
+# Deploy 4 ALT Linux VMs and Windows 10 one
+
+cluster_name: w10_gpo
+distro: altlinux
+distro_release: p8
+source_image:
+  path: ~/dist/alt-p8-cloud-20180912-x86_64.img
+admin_password: 'r00tme'
+
+# Default VM: 2 CPUs, 1 GB RAM, no swap, 2 GB hard drive, 1 NIC
+# attached to the `default` libvirt network.
+# VMs' hard drives are allocated from the nvme_crypt/vmpool thin pool
+
+machine:
+  cpu_count: 2
+  base_ram: 1024
+  swap_size: 2
+  drives:
+    os:
+      vg: nvme_crypt
+      thin_pool: vmpool
+      disk_size: 4102
+  # Attach VMs to the `default` libvirt network
+  interfaces:
+    default:
+      source_net: default
+
+hosts:
+  samba_master_dc:
+    - name: dc0
+  samba_clients:
+    - name: cl0
+    - name: cl1
+    - name: cl2
+  windows_members:
+    - name: wc0
+      base_ram: 2048
+      drives:
+        os:
+          vg: nvme_crypt
+          thin_pool: vmpool
+          disk_size: 20480
+        drivers:
+          path: ~/dist/virtio-win-0.1.141.iso
+      distro: woe10
+      distro_release: woe10
+      vm_template: vm_woe.xml
+      graphics:
+        spice: true
+      source_image:
+        path: ~/dist/14393.0.160715-1616.RS1_RELEASE_CLIENTENTERPRISE_S_EVAL_X64FRE_EN-US.ISO

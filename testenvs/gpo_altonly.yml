@@ -1,0 +1,33 @@
+
+# definition of (virtual) machines required for the test
+cluster_name: gpo_altonly
+distro: altlinux
+distro_release: p8
+source_image:
+  path: ~/dist/alt-p8-cloud-20180612-x86_64.img
+admin_password: 'r00tme'
+
+
+# Default VM configuration: 2 CPUs, 1GB RAM, 4 GB hard drive
+machine:
+  cpu_count: 2
+  base_ram: 1024
+  swap_size: 2
+  interfaces:
+    default:
+      source_net: default
+  drives:
+    # this one is mandatory
+    os:
+      vg: nvme_crypt
+      thin_pool: vmpool
+      disk_size: 4102
+
+hosts:
+  samba_master_dc:
+    - name: dc0
+      base_ram: 2048
+  samba_clients:
+    - name: cl0
+    - name: cl1
+    - name: cl2
